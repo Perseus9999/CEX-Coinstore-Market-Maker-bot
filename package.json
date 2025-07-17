@@ -1,5 +1,5 @@
 {
-  "name": "my-v0-project",
+  "name": "XRP-Volume-Bot",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -67,6 +67,7 @@
     "tailwindcss-animate": "^1.0.7",
     "three": "latest",
     "vaul": "^0.9.6",
+    "xrpl": "^4.3.0",
     "zod": "^3.24.1"
   },
   "devDependencies": {

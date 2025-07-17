@@ -7,7 +7,7 @@ import type * as THREE from "three"
 
 interface Bot3DVisualizationProps {
   isRunning: boolean
-  volume?: number
+  ammPrice?: number
   activeOrders?: number
   botParams?: {
     tradingPair: string,
@@ -18,9 +18,7 @@ interface Bot3DVisualizationProps {
     maxPosition: string,
     stopLoss: string,
     takeProfit: string,
-    apiKey: string,
-    secretKey: string,
-    enableAutoRebalance: boolean,
+    server: string,
     minOrderSize: string,
   }
 }
@@ -281,7 +279,7 @@ function DataOrbs({ isRunning }: { isRunning: boolean }) {
   )
 }
 
-function TradingData({ isRunning, volume, activeOrders, botParams }: { isRunning: boolean, volume: number, activeOrders: number, botParams: any }) {
+function TradingData({ isRunning, ammPrice, activeOrders, botParams }: { isRunning: boolean, ammPrice: number, activeOrders: number, botParams: any }) {
   const dataRef = useRef<THREE.Group>(null)
 
   useFrame((state) => {
@@ -296,34 +294,23 @@ function TradingData({ isRunning, volume, activeOrders, botParams }: { isRunning
     <group ref={dataRef}>
       <Html position={[-6, 3, 0]} center>
         <div className="bg-cyan-500/20 backdrop-blur-sm border border-cyan-500/50 rounded-lg p-2 text-cyan-400 text-xs">
-          <div>{botParams.tradingPair}</div>
-          <div className="text-green-400">+2.34%</div>
+          <div className="text-green-400 w-36">Trading-Pair: {botParams.tradingPair}</div>
         </div>
       </Html>
-      <Html position={[6, 2, 0]} center>
-        <div className="bg-purple-500/20 backdrop-blur-sm border border-purple-500/50 rounded-lg p-2 text-purple-400 text-xs">
-          <div>Orders: {activeOrders}</div>
-          <div className="text-yellow-400">Active</div>
+      <Html position={[6, 2, 1]} center>
+        <div className="w-48 bg-purple-500/20 backdrop-blur-sm border border-purple-500/50 rounded-lg p-2 text-purple-400 text-xs">
+          <div className="text-yellow-400">Trading Amount: {botParams.baseAmount} XRP</div>
         </div>
       </Html>
-      <Html position={[0, -4, 6]} center>
+      <Html position={[0, -4, 3]} center>
         <div className="bg-green-500/20 backdrop-blur-sm border border-green-500/50 rounded-lg p-2 text-green-400 text-xs">
-          <div>Volume</div>
-          <div className="text-green-400">${volume}</div>
-        </div>
-      </Html>
-      <Html position={[4, -1, -4]} center>
-        <div className="bg-green-500/20 backdrop-blur-sm border border-green-500/50 rounded-lg p-2 text-green-400 text-xs">
-          <div>API KEY:</div>
-          <div className="text-green-400">{botParams.apiKey}</div>
-          <div>API SECRETKEY:</div>
-          <div className="text-green-400">{botParams.secretKey}</div>
+          <div></div>
+          <div className="text-green-400 w-48">Current Price: {(ammPrice).toFixed(4)} DEV/XRP</div>
         </div>
       </Html>
       <Html position={[-4, -2, -4]} center>
         <div className="bg-pink-500/20 backdrop-blur-sm border border-pink-500/50 rounded-lg p-2 text-pink-400 text-xs">
-          <div>Spread</div>
-          <div className="text-pink-400">{botParams.spread}</div>
+          <div className="text-pink-400 w-20">Spread: {botParams.spread}%</div>
         </div>
       </Html>
     </group>
@@ -354,7 +341,7 @@ function ParticleField({ isRunning }: { isRunning: boolean }) {
   return (
     <points ref={pointsRef}>
       <bufferGeometry>
-        <bufferAttribute attach="attributes-position" count={particleCount} array={positions} itemSize={3} />
+        <bufferAttribute args={[positions, 3]} attach="attributes-position" />
       </bufferGeometry>
       <pointsMaterial
         size={0.1}
@@ -367,7 +354,7 @@ function ParticleField({ isRunning }: { isRunning: boolean }) {
   )
 }
 
-export function Bot3DVisualization({ isRunning, volume, activeOrders, botParams }: Bot3DVisualizationProps) {
+export function Bot3DVisualization({ isRunning, ammPrice, activeOrders, botParams }: Bot3DVisualizationProps) {
   return (
     <Canvas camera={{ position: [8, 6, 8], fov: 60 }} gl={{ antialias: true }}>
       {/* Lighting */}
@@ -388,11 +375,11 @@ export function Bot3DVisualization({ isRunning, volume, activeOrders, botParams 
       <TradingBot isRunning={isRunning} />
       <TradingRings isRunning={isRunning} />
       <DataOrbs isRunning={isRunning} />
-      <TradingData isRunning={isRunning} volume={volume ?? 0} activeOrders={activeOrders ?? 0} botParams={botParams}/>
+      <TradingData isRunning={isRunning} ammPrice={ammPrice ?? 0} activeOrders={activeOrders ?? 0} botParams={botParams}/>
       <ParticleField isRunning={isRunning} />
 
       {/* Environment */}
-      <Environment preset="city" />
+      <Environment preset="sunset" />
 
       {/* Controls */}
       <OrbitControls

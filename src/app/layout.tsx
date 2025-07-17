@@ -7,9 +7,10 @@ import { ThemeProvider } from "@/src/components/theme-provider"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "CoinStore Market Maker Bot",
+  title: "XRP Volume Bot",
   description: "Professional market maker bot control panel for CoinStore exchange",
-    generator: 'v0.dev'
+  generator: 'Blockchain God',
+  icons:'./xrp-logo.png'
 }
 
 export default function RootLayout({
