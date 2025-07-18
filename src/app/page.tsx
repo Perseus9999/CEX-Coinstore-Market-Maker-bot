@@ -117,13 +117,16 @@ export default function MarketMakerBotControl() {
             </div>
             <div>
               <h1 className="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
-                XRP LEDGER
+                XRPL MM DOMINATOR
               </h1>
-              <p className="text-xs text-white/60">Professional Volume Bot</p>
+              <p className="text-sm text-white/60">Powered by SurferX Token</p>
             </div>
             <div className="relative ml-3">
-              <div className="w-8 h-8 bg-cyan-400 rounded-full animate-ping">
-                <img className="h-8 w-8 text-cyan-400" src={'./xrp-logo.png'}/>
+              <div className="w-12 h-12 bg-cyan-800 rounded-full">
+                <img
+                  className="h-12 w-12 rounded-full shadow-2xl shadow-cyan-400 ring-4 ring-cyan-400"
+                  src={'./srfx-logo.png'}
+                />              
               </div>
             </div>
           </div>
