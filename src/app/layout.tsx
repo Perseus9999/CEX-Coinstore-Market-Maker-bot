@@ -8,9 +8,9 @@ const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
   title: "XRPL MM DOMINATOR | Powered By SurferX Token",
-  description: "Professional srfx/XRP volume bot",
+  description: "Dominate Market Depth with XRPL Power – Built for the Ledger",
   generator: 'Blockchain God',
-  icons:'./xrp-logo.png'
+  icons:'./srfx-logo.png'
 }
 
 export default function RootLayout({
