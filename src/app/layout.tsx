@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   title: "XRPL MM DOMINATOR | Powered By SurferX Token",
   description: "Professional srfx/XRP volume bot",
   generator: 'Blockchain God',
-  icons:'./srfx-logo.png'
+  icons:'./xrp-logo.png'
 }
 
 export default function RootLayout({
