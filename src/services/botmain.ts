@@ -7,6 +7,7 @@ interface Config {
   server: string;
   walletSecret?: string;
   botWallets?: string;
+  currencyName: string;
   baseCurrency: string;
   baseIssuer: string;
   pairXRP: string;
@@ -29,13 +30,14 @@ interface BotParams {
   }
 
 const config: Config = {
-  server: 'wss://s.devnet.rippletest.net:51233', // XRP Devnet
+  server: 'wss://xrplcluster.com',            //'wss://s.devnet.rippletest.net:51233', // XRP Devnet
   walletSecret: process.env.NEXT_PUBLIC_RECIPIENT_WALLET_SECRET_KEY,
   botWallets: process.env.NEXT_PUBLIC_WALLETS,
-  baseCurrency: 'DEV',
-  baseIssuer: 'r4EviDxE4NSD5iZkfyytRdiTAXmzP7Kycy',
+  currencyName: 'srfx',
+  baseCurrency: '7372667800000000000000000000000000000000',
+  baseIssuer: 'rDgBV9WrwJ3WwtRWhkekMhDas3muFeKvoS',
   pairXRP: 'XRP',
-  xrpAmount: 0.1,
+  xrpAmount: 0.01,
   delay: 6, // Time between each iteration
   spreadPercentage: 0.01 // 1% spread
 };
@@ -110,7 +112,7 @@ async function runVolumeStrategy(wallet: Wallet, botParams: BotParams): Promise<
       ""
     );
 
-    console.log(`Current market price: ${currentPrice} ${config.baseCurrency}/${config.pairXRP}`);
+    console.log(`Current market price: ${currentPrice} ${config.currencyName}/${config.pairXRP}`);
 
     // Place orders
     await placeOffer(wallet, 'buy', currentPrice, botParams);
@@ -127,12 +129,12 @@ type OfferType = 'buy' | 'sell';
 
 async function placeOffer(wallet: Wallet, type: OfferType, currentPrice: number, botParams: BotParams): Promise<any> {
   const xrpAmount: number = Number(botParams.baseAmount);
-  const tradingAmount: number = type === 'buy' ? currentPrice * (1 - config.spreadPercentage) : currentPrice * (1 + config.spreadPercentage);
-  const finalTradingAmount: number = xrpAmount * tradingAmount;
+  const tradingAmount: number = type === 'buy' ? currentPrice * (1 - (Number(botParams.spread)/100)) : currentPrice * (1.005 + (Number(botParams.spread)/100));
+const finalTradingAmount: number = xrpAmount * tradingAmount;
   // Convert amount to integer
   const amount: string = (Math.floor(finalTradingAmount)).toString();
 
-  console.log(`Placing ${type} offer for ${amount} ${config.baseCurrency} with ${xrpAmount} XRP`);
+  console.log(`Placing ${type} offer for ${amount} ${config.currencyName} with ${xrpAmount} XRP`);
 
   try {
     const tx: any = {
@@ -159,9 +161,9 @@ async function placeOffer(wallet: Wallet, type: OfferType, currentPrice: number,
     const result = await client.submitAndWait(signed.tx_blob);
 
     if (result.result.meta && typeof result.result.meta === 'object' && 'TransactionResult' in result.result.meta) {
-      console.log(`${type} offer placed at price ${amount}(DEV per 1XRP):`, result.result.meta.TransactionResult);
+      console.log(`${type} offer placed at price ${amount}(srfx per 1XRP):`, result.result.meta.TransactionResult);
     } else {
-      console.log(`${type} offer placed at price ${amount}(DEV per 1XRP):`, result.result.meta);
+      console.log(`${type} offer placed at price ${amount}(srfx per 1XRP):`, result.result.meta);
     }
     return result;
   } catch (error) {
@@ -200,6 +202,8 @@ export async function getAmmPrice(
     if (assetObj2.currency === "XRP") {
       delete (ammRequest.asset2 as any).issuer;
     }
+
+    console.log("ammRequest=>",ammRequest)
 
     const response: any = await client.request(ammRequest);
     console.log("AMM Info Response:", response);

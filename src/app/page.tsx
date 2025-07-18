@@ -24,15 +24,15 @@ export default function MarketMakerBotControl() {
   const [activeOrders, setActiveOrders] = useState(0)
   const [uptime, setUptime] = useState("0h 0m 0s")
   const [botParams, setBotParams] = useState({
-    tradingPair: "DEV/XRP",
+    tradingPair: "srfx/XRP",
     baseAmount: "0.01",
     spread: "1",
     orderAmount: "20",
     refreshInterval: "30",
     maxPosition: "1000",
-    stopLoss: "3",
+    stopLoss: "2.5",
     takeProfit: "10",
-    server: "wss://s.devnet.rippletest.net:51233",
+    server: "wss://xrplcluster.com",
     minOrderSize: "10",
   })
 
@@ -79,7 +79,7 @@ export default function MarketMakerBotControl() {
   useEffect(() => {
     const fetchAmmPrice = async () => {
       try {
-        const result = await getAmmPrice("DEV", "XRP", "r4EviDxE4NSD5iZkfyytRdiTAXmzP7Kycy", "");
+        const result = await getAmmPrice("7372667800000000000000000000000000000000", "XRP", "rDgBV9WrwJ3WwtRWhkekMhDas3muFeKvoS", "");
         setAmmPriceValue(result);
       } catch (e) {
         setAmmPriceValue(null);
@@ -212,7 +212,7 @@ export default function MarketMakerBotControl() {
                     <div className="flex justify-between items-center mb-2">
                       <span className="text-white/80 text-sm">Current Price</span>
                       <span className="text-cyan-400 font-bold">
-                        {ammPriceValue !== null ? `${ammPriceValue.toFixed(4)} DEV/XRP` : 'Loading...'}
+                        {ammPriceValue !== null ? `${ammPriceValue.toFixed(4)} srfx/XRP` : 'Loading...'}
                       </span>
                     </div>
                     <div className="flex justify-between items-center">
@@ -272,7 +272,7 @@ export default function MarketMakerBotControl() {
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent className="bg-slate-800 border-white/20">
-                            <SelectItem value="DEV/XRP">DEV/XRP</SelectItem>
+                            <SelectItem value="srfx/XRP">srfx/XRP</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
@@ -284,7 +284,8 @@ export default function MarketMakerBotControl() {
                         <Input
                           id="baseAmount"
                           type="number"
-                          step={0.01}
+                          step={0.001}
+                          min={0.01}
                           value={botParams.baseAmount}
                           onChange={(e) => handleParamChange("baseAmount", e.target.value)}
                           placeholder="0.01"
@@ -299,10 +300,11 @@ export default function MarketMakerBotControl() {
                         <Input
                           id="spread"
                           type="number"
-                          step="0.1"
+                          step="0.01"
+                          min={0.75}
                           value={botParams.spread}
                           onChange={(e) => handleParamChange("spread", e.target.value)}
-                          placeholder="0.5"
+                          placeholder="2"
                           className="bg-white/10 border-white/20 text-white placeholder:text-white/40 hover:bg-white/20 focus:bg-white/20 transition-all duration-300"
                         />
                       </div>
@@ -319,10 +321,10 @@ export default function MarketMakerBotControl() {
                           id="stopLoss"
                           type="number"
                           step="0.1"
-                          min={3}
+                          min={2.5}
                           value={botParams.stopLoss}
                           onChange={(e) => handleParamChange("stopLoss", e.target.value)}
-                          placeholder="0.5"
+                          placeholder="2.5"
                           className="bg-white/10 border-white/20 text-white placeholder:text-white/40 hover:bg-white/20 focus:bg-white/20 transition-all duration-300"
                         />
                       </div>
