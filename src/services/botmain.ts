@@ -115,9 +115,9 @@ async function runVolumeStrategy(wallet: Wallet, botParams: BotParams): Promise<
     console.log(`Current market price: ${currentPrice} ${config.currencyName}/${config.pairXRP}`);
 
     // Place orders
-    await placeOffer(wallet, 'buy', currentPrice, botParams);
-    await placeOffer(wallet, 'sell', currentPrice, botParams);
-    await cancelAllOffer(wallet);
+    // await placeOffer(wallet, 'buy', currentPrice, botParams);
+    // await placeOffer(wallet, 'sell', currentPrice, botParams);
+    // await cancelAllOffer(wallet);
     await getOffers(wallet);
   } catch (error) {
     console.error('Error in strategy execution:', error);

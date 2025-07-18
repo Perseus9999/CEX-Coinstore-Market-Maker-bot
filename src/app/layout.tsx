@@ -7,10 +7,10 @@ import { ThemeProvider } from "@/src/components/theme-provider"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "XRP Volume Bot",
-  description: "Professional market maker bot control panel for CoinStore exchange",
+  title: "XRPL MM DOMINATOR | Powered By SurferX Token",
+  description: "Professional srfx/XRP volume bot",
   generator: 'Blockchain God',
-  icons:'./xrp-logo.png'
+  icons:'./srfx-logo.png'
 }
 
 export default function RootLayout({
@@ -21,7 +21,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+        <ThemeProvider attribute="class" defaultTheme="dark" disableTransitionOnChange>
           {children}
         </ThemeProvider>
       </body>
