@@ -305,7 +305,7 @@ function TradingData({ isRunning, ammPrice, activeOrders, botParams }: { isRunni
       <Html position={[0, -4, 3]} center>
         <div className="bg-green-500/20 backdrop-blur-sm border border-green-500/50 rounded-lg p-2 text-green-400 text-xs">
           <div></div>
-          <div className="text-green-400 w-48">Current Price: {(ammPrice).toFixed(4)} DEV/XRP</div>
+          <div className="text-green-400 w-48">Current Price: {(ammPrice).toFixed(4)} srfx/XRP</div>
         </div>
       </Html>
       <Html position={[-4, -2, -4]} center>
