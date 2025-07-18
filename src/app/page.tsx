@@ -123,10 +123,7 @@ export default function MarketMakerBotControl() {
             </div>
             <div className="relative ml-3">
               <div className="w-12 h-12 bg-cyan-800 rounded-full">
-                <img
-                  className="h-12 w-12 rounded-full shadow-2xl shadow-cyan-400 ring-4 ring-cyan-400"
-                  src={'./srfx-logo.png'}
-                />              
+                <img className="h-12 w-12 rounded-full shadow-2xl shadow-cyan-400 animate-glow" src={'./srfx-logo.png'} />          
               </div>
             </div>
           </div>
