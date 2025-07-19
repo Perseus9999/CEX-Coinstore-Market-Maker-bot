@@ -46,7 +46,6 @@ const client = new Client(config.server);
 let botTimeoutId: NodeJS.Timeout | null = null;
 
 function getWalletData(): string[] {
-    console.log('botwallets =>', config.botWallets)
   return config.botWallets ? config.botWallets.replace(/\s+/g, "").split(",") : [];
 }
 
@@ -115,9 +114,9 @@ async function runVolumeStrategy(wallet: Wallet, botParams: BotParams): Promise<
     console.log(`Current market price: ${currentPrice} ${config.currencyName}/${config.pairXRP}`);
 
     // Place orders
-    // await placeOffer(wallet, 'buy', currentPrice, botParams);
+    await placeOffer(wallet, 'buy', currentPrice, botParams);
     // await placeOffer(wallet, 'sell', currentPrice, botParams);
-    // await cancelAllOffer(wallet);
+    await cancelAllOffer(wallet);
     await getOffers(wallet);
   } catch (error) {
     console.error('Error in strategy execution:', error);
@@ -128,11 +127,18 @@ async function runVolumeStrategy(wallet: Wallet, botParams: BotParams): Promise<
 type OfferType = 'buy' | 'sell';
 
 async function placeOffer(wallet: Wallet, type: OfferType, currentPrice: number, botParams: BotParams): Promise<any> {
+//   const baseAmount: number = Number(botParams.baseAmount); 
+  console.log('current srfx price =>', currentPrice) 
   const xrpAmount: number = Number(botParams.baseAmount);
-  const tradingAmount: number = type === 'buy' ? currentPrice * (1 - (Number(botParams.spread)/100)) : currentPrice * (1.005 + (Number(botParams.spread)/100));
-const finalTradingAmount: number = xrpAmount * tradingAmount;
+  const spread_rate: number = type === 'buy' ? (1 - (Number(botParams.spread)/100)) : (1 + (Number(botParams.spread)/100))
+  console.log('spread_rate =>', spread_rate)
+  const tradingPrice: number = currentPrice * spread_rate;
+  const finalTradingAmount: number = xrpAmount * tradingPrice;
   // Convert amount to integer
-  const amount: string = (Math.floor(finalTradingAmount)).toString();
+  // const amount: string = (Math.floor(finalTradingAmount)).toString();
+  const amount: string = finalTradingAmount.toFixed(4).toString();
+  console.log('srfx amount is ', amount)
+
 
   console.log(`Placing ${type} offer for ${amount} ${config.currencyName} with ${xrpAmount} XRP`);
 
@@ -148,6 +154,7 @@ const finalTradingAmount: number = xrpAmount * tradingAmount;
             value: amount
           },
       TakerPays: type === 'buy'
+
         ? {
             currency: config.baseCurrency,
             issuer: config.baseIssuer,

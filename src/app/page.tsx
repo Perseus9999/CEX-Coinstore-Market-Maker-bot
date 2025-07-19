@@ -26,7 +26,7 @@ export default function MarketMakerBotControl() {
   const [botParams, setBotParams] = useState({
     tradingPair: "srfx/XRP",
     baseAmount: "0.01",
-    spread: "1",
+    spread: "0.2",
     orderAmount: "20",
     refreshInterval: "30",
     maxPosition: "1000",
@@ -301,7 +301,7 @@ export default function MarketMakerBotControl() {
                           id="spread"
                           type="number"
                           step="0.01"
-                          min={0.75}
+                          min={0.1}
                           value={botParams.spread}
                           onChange={(e) => handleParamChange("spread", e.target.value)}
                           placeholder="2"
