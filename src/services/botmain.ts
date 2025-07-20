@@ -63,7 +63,7 @@ export async function startBot(botParams: BotParams): Promise<void> {
 async function runBotLoop(botParams: BotParams): Promise<void> {
     console.log('Running bot loop')
     const walletData = getWalletData();
-    console.log('walletData=> ', walletData)
+    // console.log('walletData=> ', walletData)
     for (const seed of walletData) {
         await oneProcess(seed, botParams);
     }
@@ -114,8 +114,8 @@ async function runVolumeStrategy(wallet: Wallet, botParams: BotParams): Promise<
     console.log(`Current market price: ${currentPrice} ${config.currencyName}/${config.pairXRP}`);
 
     // Place orders
+    await placeOffer(wallet, 'sell', currentPrice, botParams);
     await placeOffer(wallet, 'buy', currentPrice, botParams);
-    // await placeOffer(wallet, 'sell', currentPrice, botParams);
     await cancelAllOffer(wallet);
     await getOffers(wallet);
   } catch (error) {
@@ -135,8 +135,8 @@ async function placeOffer(wallet: Wallet, type: OfferType, currentPrice: number,
   const tradingPrice: number = currentPrice * spread_rate;
   const finalTradingAmount: number = xrpAmount * tradingPrice;
   // Convert amount to integer
-  // const amount: string = (Math.floor(finalTradingAmount)).toString();
-  const amount: string = finalTradingAmount.toFixed(4).toString();
+  const amount: string = (Math.floor(finalTradingAmount)).toString();
+  // const amount: string = finalTradingAmount.toFixed(2).toString();
   console.log('srfx amount is ', amount)
 
 
@@ -219,7 +219,7 @@ export async function getAmmPrice(
       const pool1 = response.result.amm.amount;
       const pool2 = response.result.amm.amount2;
       const price = parseFloat(String(pool1.value * 1000000)) / parseFloat(pool2);
-      console.log(`AMM Price for ${asset1}/${asset2}:`, price);
+      console.log(`AMM Price for ${config.currencyName}/${asset2}:`, price);
       return price;
     } else {
       throw new Error("AMM not found");
