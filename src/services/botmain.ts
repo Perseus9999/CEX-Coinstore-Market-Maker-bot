@@ -1,19 +1,16 @@
 import dotenv from 'dotenv';
-import { Client, Wallet, xrpToDrops } from 'xrpl';
+import { Client, Wallet, xrpToDrops, OfferCreateFlags } from 'xrpl';
 dotenv.config();
 
 // Configuration
 interface Config {
   server: string;
-  walletSecret?: string;
   botWallets?: string;
   currencyName: string;
   baseCurrency: string;
   baseIssuer: string;
   pairXRP: string;
-  xrpAmount: number;
   delay: number;
-  spreadPercentage: number;
 }
 
 interface BotParams {
@@ -22,28 +19,24 @@ interface BotParams {
     spread: string,
     orderAmount: string,
     refreshInterval: string,
-    maxPosition: string,
     stopLoss: string,
     takeProfit: string,
     server: string,
-    minOrderSize: string,
   }
 
 const config: Config = {
   server: 'wss://xrplcluster.com',            //'wss://s.devnet.rippletest.net:51233', // XRP Devnet
-  walletSecret: process.env.NEXT_PUBLIC_RECIPIENT_WALLET_SECRET_KEY,
   botWallets: process.env.NEXT_PUBLIC_WALLETS,
-  currencyName: 'srfx',
-  baseCurrency: '7372667800000000000000000000000000000000',
-  baseIssuer: 'rDgBV9WrwJ3WwtRWhkekMhDas3muFeKvoS',
+  currencyName: process.env.NEXT_PUBLIC_BASE_CURRENCY_NAME || 'srfx',
+  baseCurrency: process.env.NEXT_PUBLIC_BASE_CURRENCY || "7372667800000000000000000000000000000000",
+  baseIssuer: process.env.NEXT_PUBLIC_BASEISSUER || "rDgBV9WrwJ3WwtRWhkekMhDas3muFeKvoS",
   pairXRP: 'XRP',
-  xrpAmount: 0.01,
   delay: 6, // Time between each iteration
-  spreadPercentage: 0.01 // 1% spread
 };
 const client = new Client(config.server);
 
 let botTimeoutId: NodeJS.Timeout | null = null;
+let count: number = 0;
 
 function getWalletData(): string[] {
   return config.botWallets ? config.botWallets.replace(/\s+/g, "").split(",") : [];
@@ -63,10 +56,13 @@ export async function startBot(botParams: BotParams): Promise<void> {
 async function runBotLoop(botParams: BotParams): Promise<void> {
     console.log('Running bot loop')
     const walletData = getWalletData();
-    // console.log('walletData=> ', walletData)
-    for (const seed of walletData) {
-        await oneProcess(seed, botParams);
+    const revertWalletData = walletData.slice().reverse();
+    console.log('count=> ', count)
+    for (const seed of count % 2 == 0 ? walletData : revertWalletData) {
+        const index = count % 2 == 0 ? walletData.indexOf(seed) : revertWalletData.indexOf(seed);
+        await oneProcess(seed, botParams, index);
     }
+    count++;
     botTimeoutId = setTimeout(() => runBotLoop(botParams), config.delay * 1000);
 }
 
@@ -75,18 +71,19 @@ export async function stopBot(botStatus: string): Promise<void> {
     clearTimeout(botTimeoutId);
     botTimeoutId = null;
   }
+  count = 0;
   await client.disconnect();
   console.log('Bot stopped and disconnected from XRP Ledger.');
 }
 
-async function oneProcess(seed: string, botParams: BotParams): Promise<void> {
+async function oneProcess(seed: string, botParams: BotParams, walletIndex: number): Promise<void> {
   const wallet: Wallet = Wallet.fromSeed(seed);
   console.log(`Using wallet: ${wallet.address}`);
 
   const balances: number = await client.getXrpBalance(wallet.address);
   console.log('Wallet balances:', balances);
   const balanceLimit = !botParams.stopLoss ? 3 : botParams.stopLoss
-  console.log("wallet balance Limit => ", balanceLimit)
+  // console.log("wallet balance Limit => ", balanceLimit)
 
   if (balances < Number(balanceLimit)) {
     console.log('Not enough XRP for trading.');
@@ -94,13 +91,13 @@ async function oneProcess(seed: string, botParams: BotParams): Promise<void> {
   }
 
   try {
-    await runVolumeStrategy(wallet, botParams);
+    await runVolumeStrategy(wallet, botParams, walletIndex);
   } catch (error: any) {
     console.error('Error in main loop:', error.message);
   }
 }
 
-async function runVolumeStrategy(wallet: Wallet, botParams: BotParams): Promise<void> {
+async function runVolumeStrategy(wallet: Wallet, botParams: BotParams, walletIndex: number): Promise<void> {
   try {
     await getOffers(wallet);
     let currentPrice: number;
@@ -111,12 +108,13 @@ async function runVolumeStrategy(wallet: Wallet, botParams: BotParams): Promise<
       ""
     );
 
-    console.log(`Current market price: ${currentPrice} ${config.currencyName}/${config.pairXRP}`);
+    console.log(`Current market ${config.currencyName} price: ${currentPrice} ${config.pairXRP}`);
 
     // Place orders
-    await placeOffer(wallet, 'sell', currentPrice, botParams);
-    await placeOffer(wallet, 'buy', currentPrice, botParams);
-    await cancelAllOffer(wallet);
+    await placeOffer(wallet, currentPrice, botParams, walletIndex);
+    // await placeBuyOffer(wallet, currentPrice, botParams, 0);
+    // await placeSellAllOffer(wallet, currentPrice, botParams, 0);
+    // await cancelAllOffer(wallet);
     await getOffers(wallet);
   } catch (error) {
     console.error('Error in strategy execution:', error);
@@ -126,46 +124,43 @@ async function runVolumeStrategy(wallet: Wallet, botParams: BotParams): Promise<
 
 type OfferType = 'buy' | 'sell';
 
-async function placeOffer(wallet: Wallet, type: OfferType, currentPrice: number, botParams: BotParams): Promise<any> {
-//   const baseAmount: number = Number(botParams.baseAmount); 
-  console.log('current srfx price =>', currentPrice) 
-  const xrpAmount: number = Number(botParams.baseAmount);
-  const spread_rate: number = type === 'buy' ? (1 - (Number(botParams.spread)/100)) : (1 + (Number(botParams.spread)/100))
-  console.log('spread_rate =>', spread_rate)
-  const tradingPrice: number = currentPrice * spread_rate;
-  const finalTradingAmount: number = xrpAmount * tradingPrice;
-  // Convert amount to integer
-  const amount: string = (Math.floor(finalTradingAmount)).toString();
-  // const amount: string = finalTradingAmount.toFixed(2).toString();
-  console.log('srfx amount is ', amount)
-
-
-  console.log(`Placing ${type} offer for ${amount} ${config.currencyName} with ${xrpAmount} XRP`);
-
+async function placeOffer(wallet: Wallet, currentPrice: number, botParams: BotParams, index: number): Promise<any> {
+  const type: OfferType = index % 2 == 0 ? "buy" : "sell"
   try {
+    const spread = botParams.spread;
+    const xrpAmount: number = Number(botParams.baseAmount);
+    const amount: string = Math.floor(xrpAmount / (type === 'buy' ? (currentPrice * (1 - Number(spread) / 100)) : (currentPrice * (1 + Number(spread) / 100)))).toString();
+    console.log('trading srfx amount =>', amount)
     const tx: any = {
       TransactionType: 'OfferCreate',
       Account: wallet.address,
-      TakerGets: type === 'buy'
-        ? xrpToDrops(xrpAmount) // XRP in drops
-        : {
-            currency: config.baseCurrency,
-            issuer: config.baseIssuer,
-            value: amount
-          },
-      TakerPays: type === 'buy'
-
+      TakerGets: type === 'buy' 
         ? {
-            currency: config.baseCurrency,
-            issuer: config.baseIssuer,
-            value: amount
-          }
-        : xrpToDrops(xrpAmount), // XRP in drops
-    };
+          currency: config.baseCurrency,
+          issuer: config.baseIssuer,
+          value: amount
+        }
+        : xrpToDrops(xrpAmount),
+      TakerPays: type === 'buy'
+        ? xrpToDrops(xrpAmount)
+        : {
+          currency: config.baseCurrency,
+          issuer: config.baseIssuer,
+          value: amount
+        },
+      Flags: type === 'buy' ? OfferCreateFlags.tfPassive : OfferCreateFlags.tfImmediateOrCancel
+    }
 
     const prepared = await client.autofill(tx);
     const signed = wallet.sign(prepared);
     const result = await client.submitAndWait(signed.tx_blob);
+
+    const offer = await client.request({
+      command: "account_offers",
+      account: wallet.address
+    })
+
+    console.log('offer for wallet => ', offer.result.offers?.length)
 
     if (result.result.meta && typeof result.result.meta === 'object' && 'TransactionResult' in result.result.meta) {
       console.log(`${type} offer placed at price ${amount}(srfx per 1XRP):`, result.result.meta.TransactionResult);
@@ -175,6 +170,97 @@ async function placeOffer(wallet: Wallet, type: OfferType, currentPrice: number,
     return result;
   } catch (error) {
     console.error(`Error placing ${type} offer:`, error);
+    throw error;
+  }
+}
+
+async function placeSellAllOffer(wallet: Wallet, currentPrice: number, botParams: BotParams, index: number): Promise<any> {
+  
+  let tokenAmount: number = 0
+  tokenAmount = await getSelectedTokenBalance(wallet.address, config.baseCurrency, config.baseIssuer) ?? 0
+  const tradingPrice: number = currentPrice * (1 - 0.012);
+  const xrpAmount: string = (tokenAmount * tradingPrice).toFixed(4);
+  console.log('current srfx price =>', (currentPrice)) 
+  console.log(`Selling srfx price =>`, (tradingPrice))
+  const amount: string = (Math.floor(tokenAmount)).toString();
+  if (amount == '0'){
+    return
+  }
+  console.log('srfx amount is ', amount)
+  console.log(`Placing sell offer for ${amount} ${config.currencyName} with ${xrpAmount} XRP`);
+
+  try {
+    const tx: any = {
+      TransactionType: 'OfferCreate',
+      Account: wallet.address,
+      TakerGets: {
+              currency: config.baseCurrency,
+              issuer: config.baseIssuer,
+              value: amount
+            },
+      TakerPays: xrpToDrops(xrpAmount),
+      Flags: 0,
+    };
+
+    const prepared = await client.autofill(tx);
+    const signed = wallet.sign(prepared);
+    const result = await client.submitAndWait(signed.tx_blob);
+
+    const offer = await client.request({
+      command: "account_offers",
+      account: wallet.address
+    })
+
+    console.log('offer for wallet => ', offer.result.offers?.length)
+
+    if (result.result.meta && typeof result.result.meta === 'object' && 'TransactionResult' in result.result.meta) {
+      console.log(`Sell offer placed at price ${amount}(srfx per 1XRP):`, result.result.meta.TransactionResult);
+    } else {
+      console.log(`Sell offer placed at price ${amount}(srfx per 1XRP):`, result.result.meta);
+    }
+    return result;
+  } catch (error) {
+    console.error(`Error placing sell offer:`, error);
+    throw error;
+  }
+}
+
+async function placeBuyOffer(wallet: Wallet, currentPrice: number, botParams: BotParams, index: number): Promise<any> {
+  try {
+    const xrpAmount: number = Number(botParams.baseAmount);
+    const amount: string = Math.floor(xrpAmount / (currentPrice * (1 + 0.012))).toString();
+    console.log('trading srfx amount =>', amount)
+    const tx: any = {
+      TransactionType: 'OfferCreate',
+      Account: wallet.address,
+      TakerGets: xrpToDrops(xrpAmount),
+      TakerPays: {
+          currency: config.baseCurrency,
+          issuer: config.baseIssuer,
+          value: amount
+        },
+      Flags: 0
+    }
+
+    const prepared = await client.autofill(tx);
+    const signed = wallet.sign(prepared);
+    const result = await client.submitAndWait(signed.tx_blob);
+
+    const offer = await client.request({
+      command: "account_offers",
+      account: wallet.address
+    })
+
+    console.log('offer for wallet => ', offer.result.offers?.length)
+
+    if (result.result.meta && typeof result.result.meta === 'object' && 'TransactionResult' in result.result.meta) {
+      console.log(`Buy offer placed at price ${amount}(srfx per 1XRP):`, result.result.meta.TransactionResult);
+    } else {
+      console.log(`Buy offer placed at price ${amount}(srfx per 1XRP):`, result.result.meta);
+    }
+    return result;
+  } catch (error) {
+    console.error(`Error placing Buy offer:`, error);
     throw error;
   }
 }
@@ -210,16 +296,16 @@ export async function getAmmPrice(
       delete (ammRequest.asset2 as any).issuer;
     }
 
-    console.log("ammRequest=>",ammRequest)
+    // console.log("ammRequest=>",ammRequest)
 
     const response: any = await client.request(ammRequest);
-    console.log("AMM Info Response:", response);
+    // console.log("AMM Info Response:", response);
 
     if (response.result.amm) {
       const pool1 = response.result.amm.amount;
       const pool2 = response.result.amm.amount2;
-      const price = parseFloat(String(pool1.value * 1000000)) / parseFloat(pool2);
-      console.log(`AMM Price for ${config.currencyName}/${asset2}:`, price);
+      const price = parseFloat(pool2) / parseFloat(String(pool1.value * 1000000));
+      // console.log(`AMM Price for ${config.currencyName}/${asset2}:`, price);
       return price;
     } else {
       throw new Error("AMM not found");
@@ -233,6 +319,29 @@ export async function getAmmPrice(
 interface Offer {
   seq: number;
   [key: string]: any;
+}
+
+async function getSelectedTokenBalance(walletAddress: string, currencyCode: string, issuerAddress: string) {
+  try {
+    const response = await client.request({
+      command: "account_lines",
+      account: walletAddress
+    })
+  
+    const line = response.result.lines.find(
+      l=> l.currency === currencyCode && l.account === issuerAddress
+    )
+  
+    if (line) {
+      console.log(`Balance of ${currencyCode}: `, line.balance)
+    } else {
+      console.log(`No trust line found for ${currencyCode} issued by ${issuerAddress}`)
+    }
+
+    return Number(line?.balance)
+  } catch (error) {
+    console.log(`response error: ${error}`)
+  }
 }
 
 async function getOffers(wallet: Wallet): Promise<Offer[] | undefined> {

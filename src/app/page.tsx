@@ -25,15 +25,13 @@ export default function MarketMakerBotControl() {
   const [uptime, setUptime] = useState("0h 0m 0s")
   const [botParams, setBotParams] = useState({
     tradingPair: "srfx/XRP",
-    baseAmount: "0.01",
-    spread: "1",
+    baseAmount: "0.1",
+    spread: "0",
     orderAmount: "20",
     refreshInterval: "30",
-    maxPosition: "1000",
     stopLoss: "2.5",
     takeProfit: "10",
     server: "wss://xrplcluster.com",
-    minOrderSize: "10",
   })
 
   useEffect(() => {
@@ -206,13 +204,9 @@ export default function MarketMakerBotControl() {
                     style={{ animationDelay: "0.8s" }}
                   >
                     <div className="flex justify-between items-center mb-2">
-                      <span className="text-white/80 text-sm">AMM</span>
-                      <span className="text-green-400 font-bold">r4yg7e...w3s1Ty</span>
-                    </div>
-                    <div className="flex justify-between items-center mb-2">
                       <span className="text-white/80 text-sm">Current Price</span>
                       <span className="text-cyan-400 font-bold">
-                        {ammPriceValue !== null ? `${ammPriceValue.toFixed(4)} srfx/XRP` : 'Loading...'}
+                        {ammPriceValue !== null ? `${ammPriceValue.toFixed(10)} XRP` : 'Loading...'}
                       </span>
                     </div>
                     <div className="flex justify-between items-center">
@@ -288,7 +282,7 @@ export default function MarketMakerBotControl() {
                           min={0.01}
                           value={botParams.baseAmount}
                           onChange={(e) => handleParamChange("baseAmount", e.target.value)}
-                          placeholder="0.01"
+                          placeholder="0.1"
                           className="bg-white/10 border-white/20 text-white placeholder:text-white/40 hover:bg-white/20 focus:bg-white/20 transition-all duration-300"
                         />
                       </div>
@@ -301,10 +295,10 @@ export default function MarketMakerBotControl() {
                           id="spread"
                           type="number"
                           step="0.01"
-                          min={0.1}
+                          min={0}
                           value={botParams.spread}
                           onChange={(e) => handleParamChange("spread", e.target.value)}
-                          placeholder="2"
+                          placeholder="0"
                           className="bg-white/10 border-white/20 text-white placeholder:text-white/40 hover:bg-white/20 focus:bg-white/20 transition-all duration-300"
                         />
                       </div>
